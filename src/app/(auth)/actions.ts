@@ -28,7 +28,11 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
   });
   if (!parsed.success) return { fieldErrors: firstErrors(parsed.error.issues) };
 
-  const origin = headers().get("origin") ?? "https://kenzim-blue.vercel.app";
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    headers().get("origin") ??
+    "http://localhost:3000";
+
   const supabase = createClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -38,8 +42,10 @@ export async function signup(_prev: FormState, formData: FormData): Promise<Form
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });
+
   if (error) return { error: "We could not create your account. Please try again in a minute." };
   if (data.session) redirect("/news");
+
   return { message: "Check your email and tap the link we sent to finish signing up." };
 }
 
@@ -53,6 +59,7 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: "Wrong email or password. Please check and try again." };
+
   redirect("/news");
 }
 
