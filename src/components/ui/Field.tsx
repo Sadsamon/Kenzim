@@ -6,9 +6,10 @@ type Props = {
   inputMode?: "text" | "email" | "tel";
   error?: string;
   hint?: string;
+  defaultValue?: string;
 };
 
-export default function Field({ label, name, type = "text", autoComplete, inputMode, error, hint }: Props) {
+export default function Field({ label, name, type = "text", autoComplete, inputMode, error, hint, defaultValue }: Props) {
   return (
     <div>
       <label htmlFor={name} className="mb-1 block text-[15px] font-semibold">
@@ -18,6 +19,7 @@ export default function Field({ label, name, type = "text", autoComplete, inputM
         id={name}
         name={name}
         type={type}
+        defaultValue={defaultValue}
         autoComplete={autoComplete}
         inputMode={inputMode}
         aria-invalid={!!error}
