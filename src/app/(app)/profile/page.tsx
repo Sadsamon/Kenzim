@@ -75,6 +75,10 @@ export default async function ProfilePage() {
         </Link>
       )}
 
+      <Link href="/about" className="mt-4 block rounded-sheet bg-surface p-5 font-semibold shadow-card">
+        About Kenzim
+      </Link>
+
       {reviewer && (
         <Link href="/admin/identity" className="mt-4 block rounded-sheet bg-ink p-5 font-semibold text-white shadow-card">
           Admin: verification queue
