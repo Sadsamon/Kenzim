@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED = ["/news", "/events", "/directory", "/market", "/profile"];
+const PROTECTED = ["/news", "/events", "/directory", "/market", "/profile", "/verify", "/admin", "/about"];
 const GUEST_ONLY = ["/login", "/signup", "/welcome"];
 
 export async function middleware(request: NextRequest) {
@@ -13,13 +13,11 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
-
   if (user && GUEST_ONLY.includes(path)) {
     const url = request.nextUrl.clone();
     url.pathname = "/news";
     return NextResponse.redirect(url);
   }
-
   return response;
 }
 
