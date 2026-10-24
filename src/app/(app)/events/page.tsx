@@ -50,6 +50,14 @@ export default async function EventsPage() {
         )}
       </div>
 
+      <Link href="/places" className="mb-5 flex items-center justify-between rounded-sheet bg-gradient-to-r from-success to-ink p-5 text-white shadow-card">
+        <span>
+          <span className="block text-lg font-bold">Places to visit</span>
+          <span className="block text-sm opacity-90">Attractions, restaurants, parks and malls</span>
+        </span>
+        <span aria-hidden="true" className="text-2xl">&rsaquo;</span>
+      </Link>
+
       {moments && moments.length > 0 && (
         <Carousel aspect="aspect-[16/10]" className="mb-5 overflow-hidden rounded-sheet shadow-card">
           {moments.map((m) => (
