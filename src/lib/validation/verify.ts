@@ -37,3 +37,8 @@ export const familySchema = z.object({
   anniversaryDate: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use a valid date").optional(),
   birthdayOptIn: z.boolean(),
 });
+
+export const contactSchema = z.object({
+  phone: z.string().trim().regex(/^\+?[0-9 ]{8,20}$/, "Enter your phone number, e.g. +263 77 123 4567"),
+  cityZw: z.string().trim().min(2, "Enter your city or town in Zimbabwe").max(60),
+});
