@@ -10,7 +10,7 @@ async function nextPopup(userId: string): Promise<PopupPost | null> {
   const supabase = createClient();
   const { data: posts } = await supabase
     .from("news_posts")
-    .select("id,title,body,image_path")
+    .select("id,title,body,image_paths")
     .gt("popup_until", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(5);
@@ -23,7 +23,7 @@ async function nextPopup(userId: string): Promise<PopupPost | null> {
   const done = new Set((seen ?? []).map((s) => s.post_id));
   const p = posts.find((x) => !done.has(x.id));
   return p
-    ? { id: p.id, title: p.title, excerpt: excerpt(p.body, 160), imageUrl: publicUrl("news-images", p.image_path) }
+    ? { id: p.id, title: p.title, excerpt: excerpt(p.body, 160), imageUrl: publicUrl("news-images", p.image_paths?.[0]) }
     : null;
 }
 
