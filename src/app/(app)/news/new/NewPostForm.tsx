@@ -4,24 +4,32 @@ import { useRouter } from "next/navigation";
 import { compressImage } from "@/lib/image";
 
 const box = "w-full rounded-[14px] border border-line bg-surface px-4 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+const MAX = 6;
+
+type Photo = { id: string; blob: Blob; url: string };
 
 export default function NewPostForm() {
   const router = useRouter();
-  const [photo, setPhoto] = useState<Blob | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    try {
-      const blob = await compressImage(f);
-      setPhoto(blob);
-      setPreview(URL.createObjectURL(blob));
-    } catch {
-      setError("We could not read that photo.");
+  async function onFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    setError("");
+    const room = MAX - photos.length;
+    if (list.length > room) setError(`You can add up to ${MAX} photos. Extra photos were skipped.`);
+    const added: Photo[] = [];
+    for (const f of list.slice(0, Math.max(room, 0))) {
+      try {
+        const blob = await compressImage(f);
+        added.push({ id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) });
+      } catch {
+        setError("One of the photos could not be read.");
+      }
     }
+    setPhotos((p) => [...p, ...added]);
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -29,8 +37,8 @@ export default function NewPostForm() {
     setError("");
     setBusy(true);
     const fd = new FormData(e.currentTarget);
-    fd.delete("photo");
-    if (photo) fd.set("photo", photo, "post.jpg");
+    fd.delete("photos");
+    photos.forEach((p, i) => fd.append("photos", p.blob, `photo-${i + 1}.jpg`));
     try {
       const res = await fetch("/api/news", { method: "POST", body: fd });
       const json = await res.json().catch(() => ({}));
@@ -63,10 +71,27 @@ export default function NewPostForm() {
         <p className="mt-1 text-sm text-muted">Leave a blank line between paragraphs.</p>
       </div>
       <div>
-        <label htmlFor="photo" className="mb-1 block text-[15px] font-semibold">Photo (optional)</label>
-        <input id="photo" name="photo" type="file" accept="image/*" onChange={onFile} className="block w-full text-base" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {preview && <img src={preview} alt="Preview" className="mt-3 max-h-56 rounded-card" />}
+        <label htmlFor="photos" className="mb-1 block text-[15px] font-semibold">Photos (optional, up to {MAX})</label>
+        <input id="photos" type="file" accept="image/*" multiple onChange={onFiles} className="block w-full text-base" />
+        {photos.length > 0 && (
+          <ul className="mt-3 grid grid-cols-3 gap-2">
+            {photos.map((p, i) => (
+              <li key={p.id} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt={`Photo ${i + 1}`} className="aspect-square w-full rounded-card object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotos((all) => all.filter((x) => x.id !== p.id))}
+                  aria-label={`Remove photo ${i + 1}`}
+                  className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-ink/70 text-lg font-bold text-white"
+                >
+                  &times;
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {photos.length > 1 && <p className="mt-1 text-sm text-muted">The first photo is the cover. Members can swipe through the rest.</p>}
       </div>
       <label className="flex items-center gap-3 text-base">
         <input type="checkbox" name="pinned" className="h-5 w-5" /> Pin to the top of the feed
