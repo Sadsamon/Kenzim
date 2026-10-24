@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
+const MAX_PHOTOS = 6;
+
 const schema = z.object({
   title: z.string().trim().min(3, "Add a title (at least 3 letters)").max(120, "Title is too long"),
   body: z.string().trim().min(1, "Write the post text").max(5000, "Post is too long"),
@@ -38,16 +40,33 @@ export async function POST(request: Request) {
   });
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
 
-  let imagePath: string | null = null;
-  const file = form.get("photo");
-  if (file instanceof File && file.size > 0) {
-    if (file.size > 3 * 1024 * 1024) return NextResponse.json({ error: "That photo is too large." }, { status: 400 });
+  const files = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length > MAX_PHOTOS) return NextResponse.json({ error: `Add at most ${MAX_PHOTOS} photos.` }, { status: 400 });
+
+  const admin = createAdminClient();
+  const uploaded: string[] = [];
+  const cleanup = async () => {
+    if (uploaded.length) await admin.storage.from("news-images").remove(uploaded);
+  };
+
+  for (const file of files) {
+    if (file.size > 3 * 1024 * 1024) {
+      await cleanup();
+      return NextResponse.json({ error: "One of the photos is too large." }, { status: 400 });
+    }
     const buf = Buffer.from(await file.arrayBuffer());
     const kind = sniff(buf);
-    if (!kind) return NextResponse.json({ error: "Use a JPG, PNG or WebP photo." }, { status: 400 });
-    imagePath = `posts/${randomUUID()}.${kind.ext}`;
-    const up = await createAdminClient().storage.from("news-images").upload(imagePath, buf, { contentType: kind.mime });
-    if (up.error) return NextResponse.json({ error: "Photo upload failed. Please try again." }, { status: 500 });
+    if (!kind) {
+      await cleanup();
+      return NextResponse.json({ error: "Use JPG, PNG or WebP photos." }, { status: 400 });
+    }
+    const path = `posts/${randomUUID()}.${kind.ext}`;
+    const up = await admin.storage.from("news-images").upload(path, buf, { contentType: kind.mime });
+    if (up.error) {
+      await cleanup();
+      return NextResponse.json({ error: "Photo upload failed. Please try again." }, { status: 500 });
+    }
+    uploaded.push(path);
   }
 
   const days = Number(parsed.data.popupDays);
@@ -58,14 +77,14 @@ export async function POST(request: Request) {
       kind: parsed.data.kind,
       title: parsed.data.title,
       body: parsed.data.body,
-      image_path: imagePath,
+      image_paths: uploaded,
       pinned: form.get("pinned") === "on",
       popup_until: days > 0 ? new Date(Date.now() + days * 86400000).toISOString() : null,
     })
     .select("id")
     .single();
   if (error || !data) {
-    if (imagePath) await createAdminClient().storage.from("news-images").remove([imagePath]);
+    await cleanup();
     return NextResponse.json({ error: "Could not save the post." }, { status: 500 });
   }
   return NextResponse.json({ id: data.id });
