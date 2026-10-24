@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { employmentSchema, emergencySchema, familySchema } from "@/lib/validation/verify";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { contactSchema, employmentSchema, emergencySchema, familySchema } from "@/lib/validation/verify";
 
 export type FormState = { error?: string; saved?: boolean; fieldErrors?: Record<string, string> };
 
@@ -106,4 +108,49 @@ export async function removeFamily(fd: FormData) {
   if (!id) return;
   await supabase.from("family_members").delete().eq("id", s(fd, "id")).eq("user_id", id);
   revalidatePath("/verify/details");
+}
+
+export async function saveContact(_p: FormState, fd: FormData): Promise<FormState> {
+  const parsed = contactSchema.safeParse({ phone: s(fd, "phone"), cityZw: s(fd, "cityZw") });
+  if (!parsed.success) return { fieldErrors: errs(parsed.error.issues) };
+  const { supabase, id } = await userId();
+  if (!id) return { error: "Please log in again." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({ phone: parsed.data.phone.replace(/\s+/g, ""), city_zw: parsed.data.cityZw })
+    .eq("id", id);
+  if (error) return { error: "Could not save. Please try again." };
+  revalidatePath("/verify");
+  revalidatePath("/verify/details");
+  return { saved: true };
+}
+
+export async function requestVerification(_p: FormState, _fd: FormData): Promise<FormState> {
+  const { supabase, id } = await userId();
+  if (!id) return { error: "Please log in again." };
+
+  const [{ data: prof }, { data: emp }, { data: ec }] = await Promise.all([
+    supabase.from("profiles").select("phone,city_zw,status").eq("id", id).single(),
+    supabase.from("employment").select("occupation").eq("user_id", id).maybeSingle(),
+    supabase.from("emergency_contacts").select("kind").eq("user_id", id),
+  ]);
+  if (!prof || prof.status !== "new") return { error: "Your request is already in progress." };
+
+  const missing: string[] = [];
+  if (!prof.phone || !prof.city_zw) missing.push("your contact details");
+  if (!emp?.occupation) missing.push("your employment");
+  if ((ec?.length ?? 0) < 2) missing.push("both emergency contacts");
+  if (missing.length) return { error: `Please complete ${missing.join(", ")} first.` };
+
+  const { error } = await supabase.from("profiles").update({ status: "pending" }).eq("id", id).eq("status", "new");
+  if (error) return { error: "Could not send your request. Please try again." };
+
+  try {
+    await createAdminClient().from("audit_log").insert({ actor_id: id, action: "verification.request", subject_id: id });
+  } catch {
+    /* logging must never block the member */
+  }
+  revalidatePath("/verify");
+  revalidatePath("/profile");
+  redirect("/verify");
 }
