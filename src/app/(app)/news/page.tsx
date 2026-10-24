@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { excerpt, fmtDate, publicUrl } from "@/lib/storage";
 import Carousel from "@/components/Carousel";
 import KindBadge from "@/components/ui/KindBadge";
+import ConfirmDelete from "@/components/ui/ConfirmDelete";
 import EmptyState from "@/components/ui/EmptyState";
+import { deletePost } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +102,7 @@ export default async function NewsPage() {
                   <p className="mt-1 text-muted">{excerpt(p.body)}</p>
                   <p className="mt-2 text-sm text-muted">{fmtDate(p.created_at)}</p>
                 </Link>
+                {canPost && <ConfirmDelete action={deletePost} id={p.id} label="Delete post" compact />}
               </li>
             );
           })}
