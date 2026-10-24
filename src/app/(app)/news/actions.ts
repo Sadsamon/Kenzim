@@ -19,10 +19,10 @@ export async function deletePost(formData: FormData) {
   if (!(await can("news.publish"))) throw new Error("Not allowed");
   const id = String(formData.get("id"));
   const supabase = createClient();
-  const { data: post } = await supabase.from("news_posts").select("image_path").eq("id", id).single();
+  const { data: post } = await supabase.from("news_posts").select("image_paths").eq("id", id).single();
   await supabase.from("news_posts").delete().eq("id", id);
-  if (post?.image_path) {
-    await createAdminClient().storage.from("news-images").remove([post.image_path]);
+  if (post?.image_paths?.length) {
+    await createAdminClient().storage.from("news-images").remove(post.image_paths);
   }
   revalidatePath("/news");
   redirect("/news");
