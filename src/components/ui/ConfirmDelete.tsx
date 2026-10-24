@@ -1,32 +1,28 @@
 "use client";
+
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 type Props = {
-  endpoint: string; // DELETE request is sent here
+  action: (formData: FormData) => Promise<void> | void;
+  id: string | number;
   label: string;
-  redirectTo?: string;
   compact?: boolean;
 };
 
-// Two-step delete: first tap asks, second tap deletes and shows any error in plain words.
-export default function ConfirmDelete({ endpoint, label, redirectTo, compact = false }: Props) {
-  const router = useRouter();
+export default function ConfirmDelete({ action, id, label, compact = false }: Props) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function remove() {
+  async function handleSubmit(formData: FormData) {
     setBusy(true);
     setError("");
+
     try {
-      const res = await fetch(endpoint, { method: "DELETE" });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Could not delete.");
-      if (redirectTo) router.push(redirectTo);
-      router.refresh();
+      await action(formData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not delete.");
+    } finally {
       setBusy(false);
     }
   }
@@ -39,7 +35,11 @@ export default function ConfirmDelete({ endpoint, label, redirectTo, compact = f
       <button
         type="button"
         onClick={() => setAsking(true)}
-        className={compact ? "h-11 px-4 text-sm font-semibold text-primary" : "h-[52px] w-full rounded-[14px] border border-primary font-semibold text-primary"}
+        className={
+          compact
+            ? "h-11 px-4 text-sm font-semibold text-primary"
+            : "h-[52px] w-full rounded-[14px] border border-primary font-semibold text-primary"
+        }
       >
         {label}
       </button>
@@ -48,15 +48,34 @@ export default function ConfirmDelete({ endpoint, label, redirectTo, compact = f
 
   return (
     <div className={pad}>
-      <div className="grid grid-cols-2 gap-3">
-        <button type="button" disabled={busy} onClick={() => setAsking(false)} className={`${h} border border-line font-semibold`}>
-          Keep it
-        </button>
-        <button type="button" disabled={busy} onClick={remove} className={`${h} bg-primary font-semibold text-white disabled:opacity-60`}>
-          {busy ? "Deleting..." : "Yes, delete"}
-        </button>
-      </div>
-      {error && <p role="alert" className="mt-2 rounded-card bg-primary/10 p-3 text-sm font-medium text-primary-dark">{error}</p>}
+      <form action={handleSubmit}>
+        <input type="hidden" name="id" value={String(id)} />
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setAsking(false)}
+            className={`${h} border border-line font-semibold`}
+          >
+            Keep it
+          </button>
+
+          <button
+            type="submit"
+            disabled={busy}
+            className={`${h} bg-primary font-semibold text-white disabled:opacity-60`}
+          >
+            {busy ? "Deleting..." : "Yes, delete"}
+          </button>
+        </div>
+      </form>
+
+      {error && (
+        <p role="alert" className="mt-2 rounded-card bg-primary/10 p-3 text-sm font-medium text-primary-dark">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
