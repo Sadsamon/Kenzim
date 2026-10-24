@@ -19,7 +19,7 @@ export default function BottomTabs() {
     >
       <ul className="mx-auto grid max-w-md grid-cols-4">
         {tabs.map(({ href, label, Icon }) => {
-          const active = path === href || path.startsWith(href + "/");
+          const active = path === href || path.startsWith(href + "/") || (href === "/events" && path.startsWith("/places"));
           return (
             <li key={href}>
               <Link
