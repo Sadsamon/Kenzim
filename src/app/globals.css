@@ -5,3 +5,6 @@
 html { background: #F8F9FA; -webkit-tap-highlight-color: transparent; }
 body { color: #121212; font-size: 16px; line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
