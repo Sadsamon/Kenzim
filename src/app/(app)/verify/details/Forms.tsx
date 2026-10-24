@@ -2,7 +2,7 @@
 import { useFormState } from "react-dom";
 import Field from "@/components/ui/Field";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { addFamily, saveEmergency, saveEmployment, type FormState } from "../actions";
+import { addFamily, saveContact, saveEmergency, saveEmployment, type FormState } from "../actions";
 
 const init: FormState = {};
 
@@ -74,6 +74,18 @@ export function FamilyForm() {
       </label>
       <Status state={state} />
       <SubmitButton>Add family member</SubmitButton>
+    </form>
+  );
+}
+
+export function ContactForm({ phone, city }: { phone?: string | null; city?: string | null }) {
+  const [state, action] = useFormState(saveContact, init);
+  return (
+    <form action={action} className="space-y-4" noValidate>
+      <Field label="Phone (WhatsApp)" name="phone" type="tel" inputMode="tel" defaultValue={phone ?? ""} autoComplete="tel" error={state.fieldErrors?.phone} />
+      <Field label="City or town in Zimbabwe" name="cityZw" defaultValue={city ?? ""} error={state.fieldErrors?.cityZw} />
+      <Status state={state} />
+      <SubmitButton>Save contact details</SubmitButton>
     </form>
   );
 }

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getMe } from "@/lib/me";
 import { createClient } from "@/lib/supabase/server";
 import { removeFamily } from "../actions";
-import { EmergencyForm, EmploymentForm, FamilyForm } from "./Forms";
+import { ContactForm, EmergencyForm, EmploymentForm, FamilyForm } from "./Forms";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +12,11 @@ export default async function DetailsPage() {
   if (!me) redirect("/login");
   const supabase = createClient();
 
-  const [{ data: emp }, { data: contacts }, { data: family }] = await Promise.all([
+  const [{ data: emp }, { data: contacts }, { data: family }, { data: prof }] = await Promise.all([
     supabase.from("employment").select("occupation,employer,work_city,work_phone").eq("user_id", me.id).maybeSingle(),
     supabase.from("emergency_contacts").select("kind,full_name,relationship,phone,address").eq("user_id", me.id),
     supabase.from("family_members").select("id,full_name,relationship").eq("user_id", me.id).order("full_name"),
+    supabase.from("profiles").select("phone,city_zw").eq("id", me.id).single(),
   ]);
   const kenya = contacts?.find((c) => c.kind === "kenya_contact");
   const zim = contacts?.find((c) => c.kind === "zimbabwe_next_of_kin");
@@ -28,9 +29,14 @@ export default async function DetailsPage() {
       </p>
       {me.status === "new" && (
         <Link href="/verify" className="mb-4 block rounded-card bg-accent p-3 font-semibold">
-          Identity verification is still to do. Tap to start.
+          When you are done here, go back to request verification.
         </Link>
       )}
+
+      <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
+        <h2 className="mb-3 text-lg font-bold">Contact details</h2>
+        <ContactForm phone={prof?.phone} city={prof?.city_zw} />
+      </section>
 
       <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
         <h2 className="mb-3 text-lg font-bold">Employment</h2>
