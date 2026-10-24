@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fmtDate, publicUrl } from "@/lib/storage";
 import Carousel from "@/components/Carousel";
 import KindBadge from "@/components/ui/KindBadge";
+import ConfirmDelete from "@/components/ui/ConfirmDelete";
 import Paragraphs from "@/components/ui/Paragraphs";
 import { deletePost } from "../actions";
 
@@ -42,10 +43,9 @@ export default async function PostPage({ params }: { params: { id: string } }) {
         </div>
       </article>
       {canDelete && (
-        <form action={deletePost} className="mt-5">
-          <input type="hidden" name="id" value={p.id} />
-          <button className="h-[52px] w-full rounded-[14px] border border-primary font-semibold text-primary">Delete this post</button>
-        </form>
+        <div className="mt-5">
+          <ConfirmDelete action={deletePost} id={p.id} label="Delete this post" />
+        </div>
       )}
     </>
   );
