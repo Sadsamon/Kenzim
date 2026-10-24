@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate, publicUrl } from "@/lib/storage";
+import Carousel from "@/components/Carousel";
 import KindBadge from "@/components/ui/KindBadge";
 import Paragraphs from "@/components/ui/Paragraphs";
 import { deletePost } from "../actions";
@@ -14,19 +15,25 @@ export default async function PostPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const { data: p } = await supabase
     .from("news_posts")
-    .select("id,kind,title,body,image_path,created_at")
+    .select("id,kind,title,body,image_paths,created_at")
     .eq("id", params.id)
     .maybeSingle();
   if (!p) notFound();
   const canDelete = await can("news.publish");
-  const img = publicUrl("news-images", p.image_path);
+  const imgs = (p.image_paths ?? []).map((x: string) => publicUrl("news-images", x)).filter(Boolean) as string[];
 
   return (
     <>
       <Link href="/news" className="mb-3 inline-block font-semibold text-primary">&lsaquo; Back to news</Link>
       <article className="overflow-hidden rounded-sheet bg-surface shadow-card">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {img && <img src={img} alt="" className="w-full object-cover" />}
+        {imgs.length > 0 && (
+          <Carousel aspect="aspect-[4/3]">
+            {imgs.map((u) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={u} src={u} alt="" />
+            ))}
+          </Carousel>
+        )}
         <div className="p-5">
           <KindBadge kind={p.kind} />
           <h1 className="mt-3 text-[26px] font-bold leading-tight">{p.title}</h1>
