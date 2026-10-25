@@ -24,7 +24,7 @@ export default function SettingsForm({ current, canEdit }: { current: number | n
         body: JSON.stringify({ monthly: Number(value) }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Could not save.");
+      if (!res.ok) throw new Error(json.error ?? `Could not save (server said ${res.status}).`);
       setMsg("Saved.");
       router.refresh();
     } catch (err) {
