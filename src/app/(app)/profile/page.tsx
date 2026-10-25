@@ -17,7 +17,8 @@ export default async function ProfilePage() {
   const me = await getMe();
   if (!me) redirect("/login");
   const s = statusText[me.status];
-  const approver = await can("members.verify");
+  const [a1, a2, a3, a4] = await Promise.all([can("members.verify"), can("dues.view"), can("roles.assign"), can("audit.read")]);
+  const admin = a1 || a2 || a3 || a4;
 
   return (
     <>
@@ -54,13 +55,19 @@ export default async function ProfilePage() {
         </Link>
       )}
 
+      {me.status === "verified" && (
+        <Link href="/dues" className="mt-4 block rounded-sheet bg-surface p-5 font-semibold shadow-card">
+          My dues
+        </Link>
+      )}
+
       <Link href="/about" className="mt-4 block rounded-sheet bg-surface p-5 font-semibold shadow-card">
         About Kenzim
       </Link>
 
-      {approver && (
-        <Link href="/admin/members" className="mt-4 block rounded-sheet bg-ink p-5 font-semibold text-white shadow-card">
-          Admin: member approvals
+      {admin && (
+        <Link href="/admin" className="mt-4 block rounded-sheet bg-ink p-5 font-semibold text-white shadow-card">
+          Admin tools
         </Link>
       )}
 
