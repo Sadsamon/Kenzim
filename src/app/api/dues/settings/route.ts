@@ -19,6 +19,6 @@ export async function POST(request: Request) {
   const { error } = await supabase
     .from("app_settings")
     .upsert({ key: "monthly_dues_usd", value: parsed.data.monthly, updated_by: user?.id, updated_at: new Date().toISOString() });
-  if (error) return fail("Could not save.", 500);
+  if (error) return fail(`Could not save: ${error.message}`, 500);
   return NextResponse.json({ ok: true });
 }
