@@ -14,7 +14,8 @@ export default function RecordForm({ memberId, monthly }: { memberId: string; mo
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     setBusy(true);
     setError("");
     setOk("");
@@ -27,7 +28,7 @@ export default function RecordForm({ memberId, monthly }: { memberId: string; mo
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Could not record the payment.");
       setOk(`Recorded. Paid until ${json.paidUntil}.`);
-      e.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not record the payment.");
