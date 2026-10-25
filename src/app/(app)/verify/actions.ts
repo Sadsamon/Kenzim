@@ -154,3 +154,43 @@ export async function requestVerification(_p: FormState, _fd: FormData): Promise
   revalidatePath("/profile");
   redirect("/verify");
 }
+
+export async function saveBirthday(_p: FormState, fd: FormData): Promise<FormState> {
+  const date = s(fd, "birthday");
+  if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { fieldErrors: { birthday: "Use a valid date" } };
+  const { supabase, id } = await userId();
+  if (!id) return { error: "Please log in again." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({ birthday: date || null, birthday_opt_in: !!date && fd.get("birthdayOptIn") === "on" })
+    .eq("id", id);
+  if (error) return { error: "Could not save. Please try again." };
+  revalidatePath("/verify/details");
+  return { saved: true };
+}
+
+export async function savePrivacy(_p: FormState, fd: FormData): Promise<FormState> {
+  const { supabase, id } = await userId();
+  if (!id) return { error: "Please log in again." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({ directory_visible: fd.get("directoryVisible") === "on", contact_visible: fd.get("contactVisible") === "on" })
+    .eq("id", id);
+  if (error) return { error: "Could not save. Please try again." };
+  revalidatePath("/verify/details");
+  return { saved: true };
+}
+
+export async function saveInterests(_p: FormState, fd: FormData): Promise<FormState> {
+  const chosen = fd.getAll("interest").map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  const { supabase, id } = await userId();
+  if (!id) return { error: "Please log in again." };
+  const del = await supabase.from("member_interests").delete().eq("user_id", id);
+  if (del.error) return { error: "Could not save. Please try again." };
+  if (chosen.length) {
+    const ins = await supabase.from("member_interests").insert(chosen.map((interest_id) => ({ user_id: id, interest_id })));
+    if (ins.error) return { error: "Could not save. Please try again." };
+  }
+  revalidatePath("/verify/details");
+  return { saved: true };
+}
