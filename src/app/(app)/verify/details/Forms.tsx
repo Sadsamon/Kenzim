@@ -2,7 +2,7 @@
 import { useFormState } from "react-dom";
 import Field from "@/components/ui/Field";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { addFamily, saveContact, saveEmergency, saveEmployment, type FormState } from "../actions";
+import { addFamily, saveBirthday, saveContact, saveEmergency, saveEmployment, saveInterests, savePrivacy, type FormState } from "../actions";
 
 const init: FormState = {};
 
@@ -86,6 +86,61 @@ export function ContactForm({ phone, city }: { phone?: string | null; city?: str
       <Field label="City or town in Zimbabwe" name="cityZw" defaultValue={city ?? ""} error={state.fieldErrors?.cityZw} />
       <Status state={state} />
       <SubmitButton>Save contact details</SubmitButton>
+    </form>
+  );
+}
+
+export function BirthdayForm({ birthday, optIn }: { birthday?: string | null; optIn: boolean }) {
+  const [state, action] = useFormState(saveBirthday, init);
+  return (
+    <form action={action} className="space-y-4" noValidate>
+      <div>
+        <label htmlFor="birthday" className="mb-1 block text-[15px] font-semibold">Your birthday (optional)</label>
+        <input id="birthday" name="birthday" type="date" defaultValue={birthday ?? ""} className="h-[52px] w-full rounded-[14px] border border-line bg-surface px-4 text-base" />
+        {state.fieldErrors?.birthday && <p className="mt-1 text-sm font-medium text-primary">{state.fieldErrors.birthday}</p>}
+      </div>
+      <label className="flex items-start gap-3 text-base">
+        <input type="checkbox" name="birthdayOptIn" defaultChecked={optIn} className="mt-1 h-5 w-5" />
+        <span>Let Kenzim wish me happy birthday and tell the community (first name only)</span>
+      </label>
+      <Status state={state} />
+      <SubmitButton>Save birthday</SubmitButton>
+    </form>
+  );
+}
+
+export function PrivacyForm({ directoryVisible, contactVisible }: { directoryVisible: boolean; contactVisible: boolean }) {
+  const [state, action] = useFormState(savePrivacy, init);
+  return (
+    <form action={action} className="space-y-4" noValidate>
+      <label className="flex items-start gap-3 text-base">
+        <input type="checkbox" name="directoryVisible" defaultChecked={directoryVisible} className="mt-1 h-5 w-5" />
+        <span>Show me in the member directory</span>
+      </label>
+      <label className="flex items-start gap-3 text-base">
+        <input type="checkbox" name="contactVisible" defaultChecked={contactVisible} className="mt-1 h-5 w-5" />
+        <span>Show my phone number to other verified members</span>
+      </label>
+      <Status state={state} />
+      <SubmitButton>Save privacy settings</SubmitButton>
+    </form>
+  );
+}
+
+export function InterestsForm({ all, chosen }: { all: { id: number; name: string }[]; chosen: number[] }) {
+  const [state, action] = useFormState(saveInterests, init);
+  return (
+    <form action={action} className="space-y-3" noValidate>
+      <div className="grid grid-cols-1 gap-2">
+        {all.map((i) => (
+          <label key={i.id} className="flex items-center gap-3 rounded-card border border-line px-4 py-3 text-base">
+            <input type="checkbox" name="interest" value={i.id} defaultChecked={chosen.includes(i.id)} className="h-5 w-5" />
+            {i.name}
+          </label>
+        ))}
+      </div>
+      <Status state={state} />
+      <SubmitButton>Save interests</SubmitButton>
     </form>
   );
 }

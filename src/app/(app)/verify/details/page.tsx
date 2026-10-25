@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getMe } from "@/lib/me";
 import { createClient } from "@/lib/supabase/server";
 import { removeFamily } from "../actions";
-import { ContactForm, EmergencyForm, EmploymentForm, FamilyForm } from "./Forms";
+import { BirthdayForm, ContactForm, EmergencyForm, EmploymentForm, FamilyForm, InterestsForm, PrivacyForm } from "./Forms";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +12,13 @@ export default async function DetailsPage() {
   if (!me) redirect("/login");
   const supabase = createClient();
 
-  const [{ data: emp }, { data: contacts }, { data: family }, { data: prof }] = await Promise.all([
+  const [{ data: emp }, { data: contacts }, { data: family }, { data: prof }, { data: allInterests }, { data: myInterests }] = await Promise.all([
     supabase.from("employment").select("occupation,employer,work_city,work_phone").eq("user_id", me.id).maybeSingle(),
     supabase.from("emergency_contacts").select("kind,full_name,relationship,phone,address").eq("user_id", me.id),
     supabase.from("family_members").select("id,full_name,relationship").eq("user_id", me.id).order("full_name"),
-    supabase.from("profiles").select("phone,city_zw").eq("id", me.id).single(),
+    supabase.from("profiles").select("phone,city_zw,birthday,birthday_opt_in,directory_visible,contact_visible").eq("id", me.id).single(),
+    supabase.from("interests").select("id,name").order("name"),
+    supabase.from("member_interests").select("interest_id").eq("user_id", me.id),
   ]);
   const kenya = contacts?.find((c) => c.kind === "kenya_contact");
   const zim = contacts?.find((c) => c.kind === "zimbabwe_next_of_kin");
@@ -46,6 +48,22 @@ export default async function DetailsPage() {
       <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
         <h2 className="mb-3 text-lg font-bold">Emergency contacts</h2>
         <EmergencyForm kenya={kenya} zim={zim} />
+      </section>
+
+      <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
+        <h2 className="mb-3 text-lg font-bold">Birthday</h2>
+        <BirthdayForm birthday={prof?.birthday} optIn={!!prof?.birthday_opt_in} />
+      </section>
+
+      <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
+        <h2 className="mb-1 text-lg font-bold">Interests</h2>
+        <p className="mb-3 text-sm text-muted">Helps members find each other in the directory.</p>
+        <InterestsForm all={allInterests ?? []} chosen={(myInterests ?? []).map((r) => r.interest_id)} />
+      </section>
+
+      <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
+        <h2 className="mb-3 text-lg font-bold">Directory privacy</h2>
+        <PrivacyForm directoryVisible={prof?.directory_visible ?? true} contactVisible={prof?.contact_visible ?? true} />
       </section>
 
       <section className="mb-5 rounded-sheet bg-surface p-5 shadow-card">
