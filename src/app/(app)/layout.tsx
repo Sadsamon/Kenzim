@@ -41,10 +41,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const popup = await nextPopup(me.id);
+  const { count: unread } = await createClient()
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .is("read_at", null);
 
   return (
     <div className="min-h-screen">
-      <TopBar name={me.fullName} />
+      <TopBar name={me.fullName} unread={unread ?? 0} />
       <main className="mx-auto max-w-md px-4 pb-28 pt-4">{children}</main>
       <BottomTabs />
       <PopupHost post={popup} />
