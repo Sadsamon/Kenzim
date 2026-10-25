@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED = ["/news", "/events", "/directory", "/market", "/profile", "/verify", "/admin", "/about"];
+const PROTECTED = ["/news", "/events", "/directory", "/market", "/profile", "/verify", "/admin", "/about", "/places", "/dues", "/notifications"];
 const GUEST_ONLY = ["/login", "/signup", "/welcome"];
 
 export async function middleware(request: NextRequest) {
