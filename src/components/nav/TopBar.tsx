@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
-export default function TopBar({ name }: { name: string }) {
+export default function TopBar({ name, unread = 0 }: { name: string; unread?: number }) {
   const initials = name
     .split(" ")
     .filter(Boolean)
@@ -17,9 +17,18 @@ export default function TopBar({ name }: { name: string }) {
           <span className="text-lg font-bold text-primary">Kenzim</span>
         </div>
         <div className="flex items-center gap-2">
-          <button aria-label="Notifications (coming soon)" className="flex h-11 w-11 items-center justify-center rounded-full text-ink">
+          <Link
+            href="/notifications"
+            aria-label={unread ? `Notifications, ${unread} new` : "Notifications"}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full text-ink"
+          >
             <Bell size={24} aria-hidden="true" />
-          </button>
+            {unread > 0 && (
+              <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Link>
           <Link
             href="/profile"
             aria-label="Your profile and settings"
