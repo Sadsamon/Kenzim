@@ -5,15 +5,18 @@ import { can } from "@/lib/permissions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminHub() {
-  const [approve, dues, roles, audit] = await Promise.all([
+  const [approve, dues, roles, audit, catalog, orders] = await Promise.all([
     can("members.verify"),
     can("dues.view"),
     can("roles.assign"),
     can("audit.read"),
+    can("catalog.manage"),
+    can("orders.manage"),
   ]);
   const cards = [
     approve && { href: "/admin/members", title: "Member approvals", note: "Confirm new members" },
     dues && { href: "/admin/dues", title: "Dues", note: "Payments, balances and reminders" },
+    (catalog || orders) && { href: "/admin/market", title: "Marketplace", note: "Orders, products, fees and rates" },
     roles && { href: "/admin/roles", title: "Members and roles", note: "Assign roles, Trusted badge, suspend" },
     audit && { href: "/admin/audit", title: "Activity log", note: "Who did what, and when" },
   ].filter(Boolean) as { href: string; title: string; note: string }[];
