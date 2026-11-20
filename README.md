@@ -6,3 +6,4 @@ PWA for the Kenyan community in Zimbabwe. Next.js + Tailwind + Supabase.
     npm install
     npm run dev
 Open http://localhost:3000
+hi
